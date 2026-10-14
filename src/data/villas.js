@@ -25,7 +25,7 @@ export const VILLAS = [
     cover: "6YnIxGgBdQA",
     photos: [
       { id: "6YnIxGgBdQA", room: "Garden", caption: "Through the gate: a lily pond, a stone plunge pool and frangipani all around.", exits: { forward: 2, right: 1, back: "exit" } },
-      { id: "a3ly0RqbZdw", room: "Daybed bale", caption: "A thatched bale with a daybed by the water, for long afternoons.", exits: { left: 2, back: 0 } },
+      { id: "DcRVVXSs_5w", room: "Daybed bale", caption: "A cushioned daybed by the plunge pool and a lounge under the timber bale, for long afternoons.", exits: { left: 2, back: 0 } },
       { id: "OaQ-p0lCmRs", room: "Courtyard lounge", caption: "Rattan chairs, lime-washed walls and the plunge pool right outside the bedroom.", exits: { forward: 3, right: 1, back: 0 } },
       { id: "3jZd5h4nJDE", room: "Bedroom", caption: "A king canopy bed under the open teak roof, cooled by a ceiling fan.", exits: { right: 4, back: 2 } },
       { id: "ZNebRQbVvBg", room: "Flower bath", caption: "A stone tub filled with frangipani petals, open to the garden.", exits: { back: 3 } },
