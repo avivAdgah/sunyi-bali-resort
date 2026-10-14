@@ -1,36 +1,33 @@
-import { useEffect } from "react";
-import { useProgress } from "@react-three/drei";
+import { useEffect, useState } from "react";
 import { useStore } from "../store";
-import { ZONES } from "../data/path";
-import { VILLA_BY_ID, STOP_BY_ID } from "../data/villas";
+import { STATIONS, STATION_BY_ID } from "../data/resort";
+import { VILLA_BY_ID } from "../data/villas";
+import { photoUrl } from "../data/photos";
 
-/** Shareable links: ?zone=pool, ?villa=cliff-infinity-villa&stop=bath, &time=night. */
+/** Shareable links: ?zone=pool starts at a facility, ?villa=cliff-infinity-villa&room=2 steps into a villa. */
 function applyDeepLink() {
   const params = new URLSearchParams(window.location.search);
   const store = useStore.getState();
-  if (params.get("time") === "night") store.setNight(true);
+  const station = STATION_BY_ID[params.get("zone")];
   const villa = VILLA_BY_ID[params.get("villa")];
-  const zone = ZONES.find((z) => z.id === params.get("zone"));
-  if (villa) {
-    store.enter();
-    store.openTour(villa.id, STOP_BY_ID[params.get("stop")] ?? 0);
-    store.teleport();
-  } else if (zone) {
-    store.enter();
-    store.walkTo(zone.dist + 1);
-    store.teleport();
-  }
+  if (station === undefined && !villa) return false;
+  store.enter();
+  if (station !== undefined) store.goTo(station);
+  if (villa) store.openTour(villa.id, Math.min(Math.max((parseInt(params.get("room"), 10) || 1) - 1, 0), villa.photos.length - 1));
+  return true;
 }
 
-export default function Intro({ ready }) {
-  const { progress, active } = useProgress();
+export default function Intro() {
   const entered = useStore((s) => s.entered);
   const enter = useStore((s) => s.enter);
-  const loaded = ready && !active && progress >= 100;
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (loaded) applyDeepLink();
-  }, [loaded]);
+    if (applyDeepLink()) return;
+    const img = new Image();
+    img.onload = img.onerror = () => setLoaded(true);
+    img.src = photoUrl(STATIONS[0].photos[0].id);
+  }, []);
 
   if (entered) return null;
   return (
@@ -46,24 +43,21 @@ export default function Intro({ ready }) {
         <h1>
           Walk the resort.
           <br />
-          <em>Choose your villa.</em>
+          <em>Step into your villa.</em>
         </h1>
         <p>
-          Step through the temple gate, past the infinity pool and the rice terraces, and look inside five villas, from a
-          thatched teak joglo to a glass pavilion on the cliff. See every room by day or by night, then book the one you want.
+          Follow the path from the temple gate past the infinity pool, the restaurant, the spa and the rice terraces to the
+          sunset bar. Then step into any of the five villas and walk through its rooms in 3D, made from real photographs.
         </p>
         <ul className="controls">
-          <li><kbd>Scroll</kbd> or <kbd>↑</kbd><kbd>↓</kbd> walk the path</li>
-          <li><kbd>Drag</kbd> look around</li>
-          <li><kbd>Click</kbd> a villa sign to tour inside</li>
-          <li><kbd>N</kbd> day / night</li>
+          <li><kbd>Scroll</kbd> walk the resort</li>
+          <li><kbd>Drag</kbd> look around a room</li>
+          <li><kbd>↑</kbd><kbd>↓</kbd> walk into a room</li>
+          <li><kbd>Esc</kbd> back out</li>
         </ul>
         <button className="btn btn-primary btn-lg" disabled={!loaded} onClick={enter}>
-          {loaded ? "Enter the resort →" : `Preparing the resort… ${Math.round(progress)}%`}
+          {loaded ? "Enter the resort →" : "Preparing the resort…"}
         </button>
-        <div className="intro-bar" aria-hidden="true">
-          <span style={{ width: `${loaded ? 100 : progress}%` }} />
-        </div>
       </div>
     </div>
   );

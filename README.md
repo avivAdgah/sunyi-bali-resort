@@ -1,21 +1,25 @@
-# SUNYI – a walkable 3D Bali resort
+# SUNYI – Bali Jungle Retreat
 
-A hotel-booking demo where the resort *is* the interface. Visitors walk in through a Balinese split gate (candi bentar), cross the open lobby pavilion to an infinity pool facing the rice terraces, then stroll a lane of five villas. Any villa can be toured inside (entrance, bedroom, bathroom, terrace & pool, the view), compared by price and booked. A switch eases the whole scene from midday through sunset to night: torches, lanterns, lit pools, fireflies and stars.
+A hotel-booking demo told in real photographs, in two parts.
 
-Built with **React**, **Vite**, **three.js / React Three Fiber**, **drei** and **zustand**. No backend: the booking form is a demo.
+**The resort.** A path through the resort's facilities (temple gate, lobby courtyard, infinity pool, warung restaurant, jungle spa, yoga shala, rice-terrace walk and sunset bar), one full-screen photo per place. Each step is a walk: the camera moves into the photo and the next place opens up from its middle while the light of the place you left lingers at the edges.
+
+**The villas.** Five villas are listed Booking.com-style at the side, with rating, key facts and nightly price. Stepping into one lets you walk through its rooms in 3D. Each room is a real photo raised into depth with a depth map, so moving the camera gives true parallax: drag to turn your head and look around, hold ▲ / ↑ (or scroll) to walk into the room, and walk on past its end to go through the doorway into the next room. Side doorways and the way back are at the screen edges. Where a photo has no information (behind furniture, beyond its frame) a soft blurred copy fills in.
+
+Built with **React**, **Vite**, **three.js / React Three Fiber** and **zustand**. No backend: the booking form is a demo.
 
 ## Controls
 
 | Action | Desktop | Mobile |
 | --- | --- | --- |
-| Walk the path | Scroll, ↑ / ↓ (or W / S), or hold the ‹ › buttons | Swipe up / down |
-| Look around | Drag, or ← / → | Swipe sideways |
-| Tour a villa | Click its carved sign or the house, *Villas & prices*, or the map | Tap |
-| Next / previous tour stop | ↑ / ↓ or the stop list | Stop buttons |
-| Day / night | **N** or the sun/moon switch | Switch |
-| Back to the path | Esc or ✕ | ✕ |
+| Walk the resort | Scroll, ↑ / ↓, the ‹ › buttons or a stop on the path | Swipe |
+| Step into a villa | *Walk in* in the list on the right | *Villas* button |
+| Look around a room | Drag | Drag |
+| Walk into a room / back | Hold ▲ ▼, ↑ ↓ (W S) or scroll | Hold ▲ ▼, or swipe up |
+| Go through a doorway | Walk past the end of the room, the doorway buttons, or ← → | Doorway buttons |
+| Leave the villa | *Back to the resort* or Esc | *Back to the resort* |
 
-Shareable links: `?zone=pool` starts at an area (`arrival`, `lobby`, `pool`, `villas`, `sunset`), `?villa=cliff-infinity-villa&stop=bath` opens a villa at a tour stop (`entrance`, `bedroom`, `bath`, `terrace`, `view`), and `&time=night` starts after dark.
+Shareable links: `?zone=pool` starts at a facility (`arrival`, `lobby`, `pool`, `restaurant`, `spa`, `yoga`, `terraces`, `sunset`) and `?villa=cliff-infinity-villa&room=2` steps into a villa at a given room.
 
 ## Development
 
@@ -27,12 +31,13 @@ npm run build    # static site in dist/ (netlify.toml is included)
 
 ## Project structure
 
-- `src/data/path.js` – the walking route (a Catmull-Rom curve) and resort areas
-- `src/data/villas.js` – villas, prices, tour stops, booking extras
-- `src/data/world.js` – pools, keep-clear areas and the valley profile (cliff, jungle slope, river, rice terraces, hills)
-- `src/scene/` – terrain, vegetation (instanced palms, frangipani, jungle), resort buildings, villas, people, golf carts, day/night and the camera rig
-- `src/ui/` – intro, HUD (areas, map, day/night), tour panel, villa list, booking
+- `src/data/resort.js` – the facilities along the path, with text, opening hours and photos
+- `src/data/villas.js` – villas, prices, ratings, and their rooms with the doorways between them
+- `src/data/photos.js` – photo, thumbnail and depth-map URLs, and photographer credits
+- `src/ui/Stage.jsx` – the resort path and the keyboard / scroll / swipe controls
+- `src/ui/RoomView.jsx` – the villa rooms in 3D: depth-displaced photo meshes, walking, looking, doorways
+- `src/ui/` – HUD, villa list, villa page, booking, credits, intro
 
-## Credits
+## Photos and depth maps
 
-Furniture models: [Furniture Kit](https://kenney.nl/assets/furniture-kit) by Kenney, licensed CC0 (see `public/models/LICENSE-kenney.txt`). Everything else (architecture, people, carts, plants, landscape, textures) is generated in code. SUNYI is a fictional resort made for a portfolio.
+All photos come from [Unsplash](https://unsplash.com) under the [Unsplash License](https://unsplash.com/license) and are stored in `public/photos` (`<id>.jpg` at 2000 px, `<id>-s.jpg` at 640 px). Each villa room photo also has `<id>-d.png`, a depth map (near = white) estimated with [Depth Anything V2](https://huggingface.co/onnx-community/depth-anything-v2-small). To add a room, add its photo, generate its depth map with the same model, and list it in `src/data/villas.js`. The photographers are listed in `src/data/photos.js` and in the *Photo credits* window on the site. SUNYI is a fictional resort made for a portfolio.

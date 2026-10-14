@@ -1,17 +1,11 @@
-import { nearestDistance } from "./path";
-
 /**
- * Villas along the lane. Each plot is 11 m wide, centred on `x`. Plot-local
- * coordinates: origin at the gate in the front wall (lane side), local −z runs
- * toward the valley, so world = [x + lx, ly, PLOT_Z + lz]. The cliff edge is at
- * local z ≈ −13.2.
+ * The five villas, listed at the side. Inside a villa you walk through its rooms in 3D:
+ * each room is a photo raised into depth with its depth map (`<id>-d.png`, see
+ * ui/RoomView). `exits` are the room's doorways: forward, left, right or back, each to
+ * another room's index or "exit" to leave the villa. `cover` is the list card's photo.
  *
- *   front wall z −0.2 · garden · building z −2.6 … −8.2 · terrace · pool · cliff
+ * Room photos must show no people (resort photos may).
  */
-export const PLOT_Z = -2.8;
-export const PLOT_W = 11;
-export const DOOR_X = 0.8; // gate and front door sit on this local x
-
 export const VILLAS = [
   {
     id: "garden-joglo",
@@ -20,13 +14,22 @@ export const VILLAS = [
     price: 190,
     size: 48,
     guests: 2,
-    bed: "King canopy bed",
-    x: 22,
-    pool: null,
-    pond: true,
-    accent: "#B8643A",
+    bed: "1 king canopy bed",
+    poolText: "Lily pond & plunge pool",
+    view: "Garden view",
+    rating: 9.1,
+    reviews: 214,
+    left: 3,
     tagline: "A teak joglo under a thatched alang-alang roof, wrapped in frangipani and a lily pond.",
-    features: ["Antique teak & terracotta", "Stone bathtub with a garden view", "Lily pond & daybed", "Breakfast in the villa"],
+    features: ["Antique teak & terracotta", "Flower bath in the garden", "Lily pond & daybed bale", "Breakfast in the villa"],
+    cover: "6YnIxGgBdQA",
+    photos: [
+      { id: "6YnIxGgBdQA", room: "Garden", caption: "Through the gate: a lily pond, a stone plunge pool and frangipani all around.", exits: { forward: 2, right: 1, back: "exit" } },
+      { id: "a3ly0RqbZdw", room: "Daybed bale", caption: "A thatched bale with a daybed by the water, for long afternoons.", exits: { left: 2, back: 0 } },
+      { id: "OaQ-p0lCmRs", room: "Courtyard lounge", caption: "Rattan chairs, lime-washed walls and the plunge pool right outside the bedroom.", exits: { forward: 3, right: 1, back: 0 } },
+      { id: "3jZd5h4nJDE", room: "Bedroom", caption: "A king canopy bed under the open teak roof, cooled by a ceiling fan.", exits: { right: 4, back: 2 } },
+      { id: "ZNebRQbVvBg", room: "Flower bath", caption: "A stone tub filled with frangipani petals, open to the garden.", exits: { back: 3 } },
+    ],
   },
   {
     id: "rice-terrace-suite",
@@ -35,12 +38,22 @@ export const VILLAS = [
     price: 280,
     size: 65,
     guests: 2,
-    bed: "King canopy bed",
-    x: 34,
-    pool: { w: 3.6, d: 3 },
-    accent: "#8A9A3B",
-    tagline: "Hand-carved timber, a plunge pool and the terraces right below your terrace.",
-    features: ["Private plunge pool", "Carved timber & alang-alang roof", "Bath with a rice-terrace view", "Daily canang offerings"],
+    bed: "1 king canopy bed",
+    poolText: "Private plunge pool",
+    view: "Rice terrace view",
+    rating: 9.3,
+    reviews: 187,
+    left: 2,
+    tagline: "Hand-carved timber, a plunge pool with a floating daybed and the rice terraces right below your terrace.",
+    features: ["Private plunge pool", "Stone bathtub", "Net hammock over the valley", "Daily canang offerings"],
+    cover: "qawgWgMATzQ",
+    photos: [
+      { id: "ABERsC7FzCM", room: "Lounge", caption: "A built-in daybed piled with cushions, just inside the carved door.", exits: { forward: 1, right: 3, back: "exit" } },
+      { id: "WQysERfYbog", room: "Bedroom", caption: "A king canopy bed with a mosquito net and teak floors.", exits: { left: 2, forward: 3, back: 0 } },
+      { id: "w8FEsHwwL10", room: "Bathroom", caption: "A carved stone bathtub beside a slate wall.", exits: { back: 1 } },
+      { id: "qawgWgMATzQ", room: "Terrace & pool", caption: "The plunge pool with a floating daybed, right above the rice terraces.", exits: { forward: 4, left: 1, back: 0 } },
+      { id: "lJF-vml60lA", room: "The view", caption: "A net hammock strung over the valley, facing the volcano.", exits: { back: 3 } },
+    ],
   },
   {
     id: "jungle-pool-villa",
@@ -49,12 +62,23 @@ export const VILLAS = [
     price: 420,
     size: 95,
     guests: 3,
-    bed: "King bed + daybed",
-    x: 46,
-    pool: { w: 5.2, d: 3.1 },
-    accent: "#2F6B5B",
-    tagline: "Clean lines, paras stone and floor-to-ceiling glass opening onto a private pool.",
+    bed: "1 king bed + daybed",
+    poolText: "5 m private pool",
+    view: "Jungle view",
+    rating: 9.4,
+    reviews: 302,
+    left: 4,
+    tagline: "Clean lines, paras stone and floor-to-ceiling glass opening straight onto a private pool.",
     features: ["5 m private pool", "Floor-to-ceiling sliding glass", "Freestanding bathtub", "Outdoor daybed & sun loungers"],
+    cover: "4jpU5xBQFqA",
+    photos: [
+      { id: "RcF3AbDcdSc", room: "Arrival", caption: "The glass pavilion seen from the garden path, behind a reflecting pool.", exits: { forward: 1, back: "exit" } },
+      { id: "4jpU5xBQFqA", room: "Pool deck", caption: "A 5 m private pool along the pavilion, loungers under the parasols.", exits: { forward: 2, right: 5, back: 0 } },
+      { id: "clzNiSBuVAM", room: "Living room", caption: "Sunken seating with floor-to-ceiling glass onto the pool.", exits: { forward: 3, left: 1, back: 1 } },
+      { id: "fBdlytm6Hp8", room: "Bedroom", caption: "A king bed in white linen, with sliding glass doors to the garden.", exits: { right: 4, left: 1, back: 2 } },
+      { id: "nYfx6BtdEeE", room: "Bathroom", caption: "A freestanding stone bathtub in slatted afternoon light.", exits: { back: 3 } },
+      { id: "FRMKzS3t4u8", room: "Sun loungers", caption: "Loungers set right into the shallow end of the pool.", exits: { left: 1, back: 1 } },
+    ],
   },
   {
     id: "alang-alang-family",
@@ -63,12 +87,23 @@ export const VILLAS = [
     price: 540,
     size: 140,
     guests: 4,
-    bed: "King canopy bed + 2 daybeds",
-    x: 58,
-    pool: { w: 6, d: 3.2 },
-    accent: "#9B6A3A",
-    tagline: "The big thatched house: room for four, a 6 m pool and a kids' daybed by the view.",
-    features: ["Sleeps four", "6 m private pool", "Outdoor bath & rain shower", "Free buggy service"],
+    bed: "1 king canopy bed + 1 queen bed",
+    poolText: "6 m private pool",
+    view: "Garden & pool view",
+    rating: 9.0,
+    reviews: 126,
+    left: 1,
+    tagline: "The big thatched house: two bedrooms, a 6 m pool and plenty of lawn for the kids.",
+    features: ["Sleeps four in two bedrooms", "6 m private pool", "Copper bathtub & rain shower", "Free buggy service"],
+    cover: "8v9Pi_tKQoA",
+    photos: [
+      { id: "8v9Pi_tKQoA", room: "Arrival", caption: "The big thatched house in its own walled garden, the pool beside it.", exits: { forward: 2, right: 1, back: "exit" } },
+      { id: "A12OW0VfVMo", room: "Pool terrace", caption: "A 6 m pool with loungers on the timber deck.", exits: { left: 2, back: 0 } },
+      { id: "007z3qCSXVo", room: "Living & bar", caption: "The living room and breakfast bar, open to the jungle.", exits: { forward: 3, right: 4, left: 1, back: 0 } },
+      { id: "diNcGNMabFI", room: "Main bedroom", caption: "A king canopy bed under a high timber roof.", exits: { right: 5, back: 2 } },
+      { id: "T5pL6ciEn-I", room: "Second bedroom", caption: "A queen bed in warm teak, with a private garden view.", exits: { back: 2 } },
+      { id: "_EienJTUSWI", room: "Bathroom", caption: "A copper bathtub on a river-stone floor.", exits: { back: 3 } },
+    ],
   },
   {
     id: "cliff-infinity-villa",
@@ -77,36 +112,32 @@ export const VILLAS = [
     price: 690,
     size: 160,
     guests: 2,
-    bed: "Super-king bed",
-    x: 70,
-    pool: { w: 7, d: 3.2, infinity: true },
-    accent: "#1F4E66",
-    tagline: "Our signature: a glass pavilion on the cliff with an infinity pool that melts into the valley.",
-    features: ["7 m infinity pool on the cliff edge", "All-glass bedroom", "Bathtub facing the volcano", "Butler & floating breakfast"],
+    bed: "1 super-king bed",
+    poolText: "7 m infinity pool",
+    view: "Valley view",
+    rating: 9.7,
+    reviews: 98,
+    left: 1,
+    tagline: "Our signature: a glass pavilion on the cliff with an infinity pool that melts into the rice fields.",
+    features: ["7 m infinity pool", "All-glass bedroom", "Rain shower with a view", "Butler & floating breakfast"],
+    cover: "HFhYNeRTVrM",
+    photos: [
+      { id: "R091q4t2k44", room: "Arrival", caption: "The modern pavilion at the cliff edge, with its own sun deck.", exits: { forward: 1, right: 4, back: "exit" } },
+      { id: "RAXD1BlJmSs", room: "Bedroom", caption: "A super-king bed behind a full wall of glass onto the jungle.", exits: { forward: 4, left: 2, right: 3, back: 0 } },
+      { id: "5LXM3u4HESo", room: "Reading corner", caption: "An armchair by the window and a fruit plate every afternoon.", exits: { back: 1 } },
+      { id: "VSCwUAzNTvA", room: "Rain shower", caption: "A rain shower with a view over the treetops.", exits: { back: 1 } },
+      { id: "HFhYNeRTVrM", room: "Infinity pool", caption: "The 7 m infinity pool that melts into the rice fields.", exits: { forward: 5, back: 1 } },
+      { id: "pFKQRc5nWhY", room: "After dark", caption: "The pool and the pavilion lit up at night.", exits: { back: 4 } },
+    ],
   },
-].map((v) => ({ ...v, dist: nearestDistance(v.x + DOOR_X, PLOT_Z + 1) }));
+];
 
 export const VILLA_BY_ID = Object.fromEntries(VILLAS.map((v) => [v.id, v]));
 
-/** Tour viewpoints inside a villa (plot-local). The camera travels between them. */
-export const STOPS = [
-  { id: "entrance", name: "Entrance", pos: [DOOR_X, 1.9, -3.2], look: [-0.6, 1.1, -10] },
-  { id: "bedroom", name: "Bedroom", pos: [1.1, 1.8, -6.9], look: [-1.5, 0.9, -3.8] },
-  { id: "bath", name: "Bathroom", pos: [2.75, 1.8, -3.0], look: [3.0, 0.7, -8.5], via: [2.5, 1.8, -6.7] },
-  { id: "terrace", name: "Terrace & pool", pos: [0.2, 1.9, -8.9], look: [-0.8, -1.6, -24] },
-  { id: "view", name: "The view", pos: [4.5, 1.75, -12.6], look: [-3, -3.5, -60] },
-];
-export const STOP_BY_ID = Object.fromEntries(STOPS.map((s, i) => [s.id, i]));
-
-/** Plot-local → world. */
-export const toWorld = (villa, [x, y, z]) => [villa.x + x, y, PLOT_Z + z];
-
-/** Waypoints the camera passes through when entering a villa from the lane. */
-export const GATE_OUT = [DOOR_X, 1.7, 1.1];
-export const GATE_IN = [DOOR_X, 1.85, -1.4];
-
 export const money = (n) => `$${n.toLocaleString("en-US")}`;
 export const TAX_RATE = 0.21; // Bali hotels add 21% tax & service
+
+export const ratingWord = (r) => (r >= 9.5 ? "Exceptional" : r >= 9 ? "Superb" : r >= 8.5 ? "Excellent" : "Very good");
 
 export const EXTRAS = [
   { id: "transfer", name: "Airport transfer (Denpasar)", price: 45, per: "stay" },

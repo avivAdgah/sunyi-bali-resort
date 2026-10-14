@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useStore, nightsBetween } from "../store";
 import { VILLAS, VILLA_BY_ID, EXTRAS, TAX_RATE, money } from "../data/villas";
+import { thumbUrl } from "../data/photos";
 
 /** Booking sheet: villa, dates, guests, extras, live price breakdown. A demo: nothing is charged. */
 export default function Booking() {
@@ -104,7 +105,8 @@ export default function Booking() {
                   </label>
                 </div>
               </div>
-              <div className="summary" style={{ "--accent": villa.accent }}>
+              <div className="summary">
+                <img className="summary-photo" src={thumbUrl(villa.cover)} alt="" />
                 <span className={`chip chip-${villa.style}`}>{villa.style === "modern" ? "Modern" : "Rustic"}</span>
                 <h3>{villa.name}</h3>
                 <p className="muted small">{villa.size} m² · {villa.bed}</p>

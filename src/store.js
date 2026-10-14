@@ -1,9 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { clampDist } from "./data/path";
-import { VILLA_BY_ID, STOPS } from "./data/villas";
-
-export const START_DIST = 0.5;
+import { STATIONS } from "./data/resort";
+import { VILLA_BY_ID } from "./data/villas";
 
 const isoDay = (offset) => {
   const d = new Date();
@@ -11,44 +9,55 @@ const isoDay = (offset) => {
   return d.toISOString().slice(0, 10);
 };
 
+const clampStation = (i) => Math.min(Math.max(i, 0), STATIONS.length - 1);
+
 export const useStore = create(
   persist(
     (set, get) => ({
-      // ---- Walking ----
-      targetDist: START_DIST,
-      currentDist: START_DIST,
       entered: false,
-      walk: (delta) => {
-        if (get().tour) return;
-        set({ targetDist: clampDist(get().targetDist + delta) });
-      },
-      walkTo: (dist) => set({ targetDist: clampDist(dist), tour: null }),
-      teleportTick: 0,
-      teleport: () => set({ teleportTick: get().teleportTick + 1 }),
-      setCurrentDist: (d) => set({ currentDist: d }),
       enter: () => set({ entered: true }),
 
-      // ---- Day / night ----
-      night: false,
-      setNight: (night) => set({ night }),
-      toggleNight: () => set({ night: !get().night }),
-
-      // ---- Villa tour ----
-      /** { villaId, stop } while touring inside a villa, else null. */
-      tour: null,
-      hoveredVilla: null,
-      openTour: (villaId, stop = 0) =>
-        set({ tour: { villaId, stop }, targetDist: VILLA_BY_ID[villaId].dist, hoveredVilla: null, listOpen: false }),
-      setStop: (stop) => {
-        const tour = get().tour;
-        if (tour) set({ tour: { ...tour, stop: (stop + STOPS.length) % STOPS.length } });
+      // ---- The resort path: a station per facility, a photo within the station ----
+      station: 0,
+      photo: 0,
+      /** How the last step moved you ("forward", "back", "left" or "right"); picks the transition. */
+      move: "forward",
+      goTo: (i) => {
+        const station = clampStation(i);
+        if (station !== get().station) set({ station, photo: 0, move: station > get().station ? "forward" : "back" });
       },
-      exitTour: () => set({ tour: null }),
-      setHoveredVilla: (hoveredVilla) => set({ hoveredVilla }),
+      setPhoto: (photo) => set({ photo }),
 
-      // ---- Panels ----
-      listOpen: false,
-      setListOpen: (listOpen) => set({ listOpen }),
+      // ---- Inside a villa: rooms you walk through in 3D ----
+      /** { villaId, stop } while inside a villa, else null. */
+      tour: null,
+      openTour: (villaId, stop = 0) => set({ tour: { villaId, stop }, move: "forward", villa: null, roomsOpen: false }),
+      setStop: (i, move) => {
+        const tour = get().tour;
+        const stop = Math.min(Math.max(i, 0), VILLA_BY_ID[tour.villaId].photos.length - 1);
+        if (stop !== tour.stop) set({ tour: { ...tour, stop }, move: move || (stop > tour.stop ? "forward" : "back") });
+      },
+      /** Takes the doorway in direction `move` from this room, if it has one. */
+      go: (move) => {
+        const exit = exitsHere(get()).find((e) => e.move === move);
+        if (!exit) return false;
+        if (exit.to === "exit") get().exitTour();
+        else get().setStop(exit.to, move);
+        return true;
+      },
+      exitTour: () => set({ tour: null, roomsOpen: false }),
+
+      // ---- Villas ----
+      /** Villa id whose page (all photos and facilities) is open, else null. */
+      villa: null,
+      openVilla: (villa) => set({ villa, roomsOpen: false }),
+      closeVilla: () => set({ villa: null }),
+      /** The villa list on narrow screens, where it is a drawer. */
+      roomsOpen: false,
+      setRoomsOpen: (roomsOpen) => set({ roomsOpen }),
+
+      credits: false,
+      setCredits: (credits) => set({ credits }),
 
       // ---- Booking ----
       booking: null, // { villaId, checkIn, checkOut, guests, extras: [] } while the booking sheet is open
@@ -56,13 +65,13 @@ export const useStore = create(
       openBooking: (villaId) =>
         set({
           booking: {
-            villaId: villaId || get().tour?.villaId || "jungle-pool-villa",
+            villaId: villaId || get().villa || get().tour?.villaId || "jungle-pool-villa",
             checkIn: isoDay(30),
             checkOut: isoDay(34),
             guests: 2,
             extras: [],
           },
-          listOpen: false,
+          roomsOpen: false,
         }),
       updateBooking: (patch) => set({ booking: { ...get().booking, ...patch } }),
       closeBooking: () => set({ booking: null }),
@@ -74,5 +83,16 @@ export const useStore = create(
     },
   ),
 );
+
+/** The doorways of the room you stand in: { move, to, label }, where `to` is a room index or "exit". */
+export function exitsHere({ tour }) {
+  if (!tour) return [];
+  const rooms = VILLA_BY_ID[tour.villaId].photos;
+  return Object.entries(rooms[tour.stop].exits).map(([move, to]) => ({
+    move,
+    to,
+    label: to === "exit" ? "Exit to the resort" : rooms[to].room,
+  }));
+}
 
 export const nightsBetween = (a, b) => Math.max(0, Math.round((new Date(b) - new Date(a)) / 86400000));

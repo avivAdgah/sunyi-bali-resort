@@ -1,155 +1,187 @@
-import { useEffect, useState } from "react";
-import { ZONES, zoneAt, PATH_POLYLINE, frameAt, nearestDistance, PATH_LENGTH } from "../data/path";
-import { VILLAS, VILLA_BY_ID, PLOT_Z, PLOT_W, money } from "../data/villas";
-import { POOLS } from "../data/world";
-import { useStore } from "../store";
-import { input } from "../scene/CameraRig";
+import { useStore, exitsHere } from "../store";
+import { STATIONS } from "../data/resort";
+import { VILLA_BY_ID } from "../data/villas";
+import { thumbUrl, credit } from "../data/photos";
+import { roomInput } from "./RoomView";
 import { BrandMark } from "./Intro";
 
+/**
+ * Everything over the view. On the resort path: the place you are at and the path
+ * between the facilities. Inside a villa: the room, its doorways, walking controls and
+ * the list of rooms.
+ */
 export default function Hud() {
   const entered = useStore((s) => s.entered);
-  const currentDist = useStore((s) => s.currentDist);
   const tour = useStore((s) => s.tour);
-  const setListOpen = useStore((s) => s.setListOpen);
-  const openBooking = useStore((s) => s.openBooking);
-  const night = useStore((s) => s.night);
-  useEffect(() => {
-    document.body.dataset.night = String(night);
-  }, [night]);
-  const zone = zoneAt(currentDist);
-  const where = tour ? VILLA_BY_ID[tour.villaId].name : zone.name;
-
+  const villa = tour && VILLA_BY_ID[tour.villaId];
   return (
-    <div className={`hud ${entered ? "is-on" : ""} ${tour ? "is-touring" : ""}`}>
+    <div className={`hud ${entered ? "is-on" : ""} ${villa ? "is-touring" : ""}`}>
+      {villa ? <VillaHud villa={villa} stop={tour.stop} /> : <ResortHud />}
+    </div>
+  );
+}
+
+function ResortHud() {
+  const index = useStore((s) => s.station);
+  const store = useStore.getState();
+  return (
+    <>
       <header className="topbar">
         <div className="brand">
           <BrandMark />
           <span>SUNYI</span>
         </div>
-        <div className="topbar-zone" aria-live="polite">
-          <span>{tour ? "Touring" : "You are at"}</span>
-          <strong>{where}</strong>
-        </div>
         <div className="topbar-actions">
-          <TimeToggle />
-          <button className="btn btn-ghost" onClick={() => setListOpen(true)}>
+          <button className="btn btn-ghost show-narrow" onClick={() => store.setRoomsOpen(true)}>
             Villas <span className="hide-sm">&amp; prices</span>
           </button>
-          <button className="btn btn-gold hide-xs" onClick={() => openBooking()}>Book</button>
+          <button className="btn btn-gold" onClick={() => store.openBooking()}>Book</button>
         </div>
       </header>
 
-      {!tour && (
-        <>
-          <WalkHint dist={currentDist} />
-          <nav className="route" aria-label="Resort areas">
-            <HoldButton dir={-1} label="Walk back">‹</HoldButton>
-            <ol>
-              {ZONES.map((z) => (
-                <li key={z.id}>
-                  <button className={z.id === zone.id ? "is-current" : ""} onClick={() => useStore.getState().walkTo(z.dist + 1)}>
-                    {z.short}
-                  </button>
-                </li>
-              ))}
-            </ol>
-            <HoldButton dir={1} label="Walk forward">›</HoldButton>
-            <div className="route-progress" style={{ width: `${(currentDist / PATH_LENGTH) * 100}%` }} />
-          </nav>
-          <Minimap dist={currentDist} />
-        </>
+      <StationCard key={STATIONS[index].id} station={STATIONS[index]} index={index} />
+
+      <nav className="route" aria-label="Walk through the resort">
+        <button className="route-step" onClick={() => store.goTo(index - 1)} disabled={index === 0} aria-label="Walk back">‹</button>
+        <ol style={{ "--progress": index / (STATIONS.length - 1) }}>
+          {STATIONS.map((s, i) => (
+            <li key={s.id} className={i === index ? "is-current" : i < index ? "is-past" : ""}>
+              <button onClick={() => store.goTo(i)} aria-current={i === index ? "step" : undefined}>
+                <span className="route-dot" />
+                <span className="route-name">{s.short}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+        <button className="route-step" onClick={() => store.goTo(index + 1)} disabled={index === STATIONS.length - 1} aria-label="Walk on">›</button>
+      </nav>
+    </>
+  );
+}
+
+function StationCard({ station, index }) {
+  const photo = useStore((s) => s.photo);
+  const setPhoto = useStore((s) => s.setPhoto);
+  const current = station.photos[photo];
+  const by = credit(current.id);
+  return (
+    <section className="station" aria-live="polite">
+      <span className="station-kicker">Stop {index + 1} of {STATIONS.length}</span>
+      <h1>{station.name}</h1>
+      <p>{station.text}</p>
+      <p className="station-info"><ClockIcon />{station.info}</p>
+      {station.photos.length > 1 && (
+        <div className="station-thumbs">
+          {station.photos.map((p, i) => (
+            <button key={p.id} className={i === photo ? "is-on" : ""} onClick={() => setPhoto(i)} aria-label={p.caption}>
+              <img src={thumbUrl(p.id)} alt="" />
+            </button>
+          ))}
+        </div>
       )}
+      <p className="station-caption">
+        {current.caption} · <a href={by.page} target="_blank" rel="noreferrer">Photo: {by.name}</a>
+      </p>
+      {index === 0 && <p className="station-hint">Scroll, swipe or use the arrows to walk through the resort</p>}
+    </section>
+  );
+}
+
+function VillaHud({ villa, stop }) {
+  const store = useStore.getState();
+  const room = villa.photos[stop];
+  const by = credit(room.id);
+  return (
+    <>
+      <header className="topbar">
+        <button className="btn btn-ghost" onClick={store.exitTour}>‹ Back to the resort</button>
+        <div className="topbar-actions">
+          <button className="btn btn-ghost show-narrow" onClick={() => store.setRoomsOpen(true)}>Villa &amp; price</button>
+          <button className="btn btn-gold" onClick={() => store.openBooking()}>Reserve</button>
+        </div>
+      </header>
+
+      <Doorways key={`doors:${villa.id}:${stop}`} />
+
+      <section className="station room-caption" key={`${villa.id}:${stop}`} aria-live="polite">
+        <span className="station-kicker">{villa.name} · room {stop + 1} of {villa.photos.length}</span>
+        <h1>{room.room}</h1>
+        <p>{room.caption}</p>
+        <p className="station-caption">
+          <a href={by.page} target="_blank" rel="noreferrer">Photo: {by.name}</a> · 3D from the photo's depth
+        </p>
+        {stop === 0 && <p className="station-hint">Drag to look around · hold ▲ or scroll to walk in</p>}
+      </section>
+
+      <div className="walk-pad" aria-label="Walk">
+        <HoldButton dir={1} label="Walk forward">▲</HoldButton>
+        <HoldButton dir={-1} label="Step back">▼</HoldButton>
+      </div>
+
+      <nav className="route" aria-label={`Rooms of ${villa.name}`}>
+        <button className="route-step" onClick={() => store.setStop(stop - 1)} disabled={stop === 0} aria-label="Previous room">‹</button>
+        <ol style={{ "--progress": stop / (villa.photos.length - 1) }}>
+          {villa.photos.map((p, i) => (
+            <li key={p.id} className={i === stop ? "is-current" : i < stop ? "is-past" : ""}>
+              <button onClick={() => store.setStop(i)} aria-current={i === stop ? "step" : undefined}>
+                <span className="route-dot" />
+                <span className="route-name">{p.room}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+        <button className="route-step" onClick={() => store.setStop(stop + 1)} disabled={stop === villa.photos.length - 1} aria-label="Next room">›</button>
+      </nav>
+    </>
+  );
+}
+
+/**
+ * The room's doorways, always in the same places: ahead at the top, the side rooms at
+ * the edges, the way back in the corner. Walking to the end of a room or turning hard
+ * toward a side also takes them.
+ */
+function Doorways() {
+  const tour = useStore((s) => s.tour);
+  const go = useStore((s) => s.go);
+  return (
+    <div className="arrows">
+      {exitsHere({ tour }).map((e) => (
+        <button key={e.move} className={`arrow arrow-${e.move}`} onClick={() => go(e.move)} title={`${e.label} (${KEY[e.move]})`}>
+          <span className="arrow-icon"><Chevron move={e.move} /></span>
+          <span className="arrow-label">{e.move === "back" && e.to !== "exit" ? `Back to ${e.label}` : e.label}</span>
+        </button>
+      ))}
     </div>
   );
 }
 
-/** Sun/moon switch; the whole scene eases between midday and night. */
-export function TimeToggle({ label = false }) {
-  const night = useStore((s) => s.night);
-  const toggle = useStore((s) => s.toggleNight);
-  return (
-    <button className={`time-toggle ${night ? "is-night" : ""}`} onClick={toggle} role="switch" aria-checked={night} aria-label="Night view" title="Day / night (N)">
-      <span className="time-knob">{night ? <MoonIcon /> : <SunIcon />}</span>
-      {label && <span className="time-label">{night ? "Night" : "Day"}</span>}
-    </button>
-  );
-}
-
+/** Hold to keep walking (into the room or back). */
 function HoldButton({ dir, label, children }) {
-  const start = () => (input.forward = dir);
-  const stop = () => (input.forward = 0);
+  const start = (e) => {
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    roomInput.walk = dir;
+  };
+  const stop = () => (roomInput.walk = 0);
   return (
-    <button
-      className="route-step"
-      aria-label={label}
-      onPointerDown={start}
-      onPointerUp={stop}
-      onPointerLeave={stop}
-      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && useStore.getState().walk(dir * 3)}
-    >
+    <button className="walk-btn" aria-label={label} onPointerDown={start} onPointerUp={stop} onPointerCancel={stop} onLostPointerCapture={stop}>
       {children}
     </button>
   );
 }
 
-function WalkHint({ dist }) {
-  const [gone, setGone] = useState(false);
-  useEffect(() => {
-    if (dist > 6) setGone(true);
-  }, [dist]);
-  if (gone) return null;
-  return <div className="hint">Scroll to walk · drag to look around · click a villa sign to step inside</div>;
-}
+const KEY = { forward: "↑", back: "↓", left: "←", right: "→" };
+const ROTATE = { forward: 0, right: 90, back: 180, left: -90 };
 
-// Minimap: x −32…100, z −18…46 (meters) → SVG units.
-const MAP = { minX: -32, minZ: -18, w: 132, h: 64 };
-
-function Minimap({ dist }) {
-  const { point, tangent } = frameAt(dist);
-  const heading = (Math.atan2(tangent.x, -tangent.z) * 180) / Math.PI;
-  const onClick = (e) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    const x = MAP.minX + ((e.clientX - r.left) / r.width) * MAP.w;
-    const z = MAP.minZ + ((e.clientY - r.top) / r.height) * MAP.h;
-    const villa = VILLAS.find((v) => Math.abs(x - v.x) < PLOT_W / 2 && z < PLOT_Z && z > -16);
-    if (villa) useStore.getState().openTour(villa.id);
-    else useStore.getState().walkTo(nearestDistance(x, z));
-  };
-  return (
-    <figure className="minimap">
-      <svg viewBox={`${MAP.minX} ${MAP.minZ} ${MAP.w} ${MAP.h}`} onClick={onClick} role="img" aria-label="Resort map, click to go there">
-        <rect x={-31} y={-16} width={130} height={38} rx={2} className="mm-ground" />
-        <rect x={-31} y={-18} width={130} height={2} className="mm-valley" />
-        <rect x={-4} y={22} width={8} height={24} className="mm-road" />
-        {POOLS.filter((p) => !p.pond).map((p) => (
-          <rect key={p.id} x={p.x0} y={p.z0} width={p.x1 - p.x0} height={p.z1 - p.z0} rx={0.6} className="mm-pool" />
-        ))}
-        <rect x={-8} y={2} width={16} height={13} rx={1} className="mm-building" />
-        {VILLAS.map((v) => (
-          <g key={v.id}>
-            <rect x={v.x - PLOT_W / 2 + 0.5} y={-15.6} width={PLOT_W - 1} height={12.6} rx={1} className={`mm-villa mm-${v.style}`} />
-            <text x={v.x} y={-6.5} className="mm-price">{money(v.price)}</text>
-          </g>
-        ))}
-        <polyline points={PATH_POLYLINE.map((p) => p.join(",")).join(" ")} className="mm-path" />
-        <g transform={`translate(${point.x} ${point.z}) rotate(${heading})`}>
-          <circle r={4} className="mm-you-halo" />
-          <path d="M0 -4 L3 3 L0 1.4 L-3 3 Z" className="mm-you" />
-        </g>
-      </svg>
-      <figcaption>Resort map · click a villa to tour it</figcaption>
-    </figure>
-  );
-}
-
-export const SunIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-    <circle cx="12" cy="12" r="4.2" />
-    <path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" />
+const Chevron = ({ move }) => (
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ transform: `rotate(${ROTATE[move]}deg)` }} aria-hidden="true">
+    <path d="M5 15l7-7 7 7" />
   </svg>
 );
-export const MoonIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" />
+
+const ClockIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
   </svg>
 );
